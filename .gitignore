@@ -1,4 +1,4 @@
-# Node modules
+# Node
 node_modules/
 
 # Env files
@@ -6,6 +6,17 @@ node_modules/
 .env.local
 .env.*.local
 
-# OS/Editor files
-.DS_Store
+# Firebase
+serviceAccountKey.json
+
+# Build
+dist/
+dist-ssr/
+
+# Logs
 *.log
+
+# OS/Editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
