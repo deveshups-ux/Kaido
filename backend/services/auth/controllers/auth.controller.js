@@ -3,12 +3,14 @@ import { app } from "../config/firebase.js";
 import User from "../models/user.model.js";
 import crypto from "crypto";
 import redis from "../../../shared/Redis/redis.js";
-
 export const login = async (req, res) => {
   try {
     const { token } = req.body;
     const decoded = await getAuth(app).verifyIdToken(token);
     let user = await User.findOne({ firebaseUid: decoded.uid });
+    let statusCode = 200;
+    let message = "User logged in";
+
     if (!user) {
       user = await User.create({
         firebaseUid: decoded.uid,
@@ -16,30 +18,32 @@ export const login = async (req, res) => {
         name: decoded.name,
         avatar: decoded.picture,
       });
-      const sessionId = crypto.randomUUID();
-      await redis.set(
-        `session-${sessionId}`,
-        JSON.stringify({
-          userId: user._id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-        }),
-        "EX",
-        60 * 60 * 24 * 7,
-      );
-      res.cookie("session", sessionId, {
-        httpOnly: false,
-        secure: false,
-        sameSite: "strict",
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
-
-      return res.status(201).json({ message: "User created", user: user });
+      statusCode = 201;
+      message = "User created";
     }
-    return res.status(200).json({ message: "User logged in", user });
+
+    const sessionId = crypto.randomUUID();
+    await redis.set(
+      `session-${sessionId}`,
+      JSON.stringify({
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      }),
+      "EX",
+      60 * 60 * 24 * 7,
+    );
+    res.cookie("session", sessionId, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    return res.status(statusCode).json({ message, user });
   } catch (error) {
-    console.error("Login error:", error); // ye line add karo
+    console.error("Login error:", error);
     res.status(401).json({ error: "Invalid token" });
   }
 };
