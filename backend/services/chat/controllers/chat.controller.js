@@ -1,11 +1,11 @@
-import Conversation from "../model/conversation.model";
-import Message from "../model/message.model";
+import Conversation from "../model/conversation.model.js";
+import Message from "../model/message.model.js";
 
 export const createConversation = async (req, res) => {
   try {
     const userId = req.headers["x-user-id"];
     console.log(userId);
-    const conversation = new Conversation.create({ userId: userId });
+    const conversation = await Conversation.create({ userId: userId });
     return res
       .status(201)
       .json({ message: "Conversation created successfully", conversation });
