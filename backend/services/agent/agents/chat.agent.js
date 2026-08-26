@@ -1,7 +1,7 @@
-import { getModel } from "../config/llmModels";
+import { getModel } from "../config/llmModels.js";
 
-export const chatAgent = async (params) => {
-  const llm = getModel("chat");
+export const chatAgent = async (state) => {
+  const llm = await getModel("chat");
   const CHAT_AGENT_SYSTEM_PROMPT = `You are a helpful, knowledgeable, and friendly AI assistant. Your job is to have natural conversations and help the user with whatever they need — answering questions, explaining concepts, brainstorming ideas, giving advice, writing content, solving problems, or just chatting.
 
 Guidelines for how you respond:

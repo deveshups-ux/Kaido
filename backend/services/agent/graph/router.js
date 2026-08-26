@@ -1,7 +1,7 @@
-import { getModel } from "../config/llmModels";
+import { getModel } from "../config/llmModels.js";
 
 export const router = async (state) => {
-  const llm = getModel("router");
+  const llm = await getModel("router");
 
   const prompt = `You are an intelligent agent router router for a multi-agent AI system. Your ONLY job is to analyze the user's message (and any attached file/context info) and decide which single agent node should handle it. You do NOT answer the user's question. You do NOT explain anything to the user. You ONLY output a routing decision in the exact JSON format specified below.
  

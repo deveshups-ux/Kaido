@@ -1,15 +1,15 @@
 import { StateGraph, START, END } from "@langchain/langgraph";
-import { agentState } from "./state";
-import { router } from "./router";
-import { chatAgent } from "../agents/chat.agent";
-import { codingAgent } from "../agents/coding.agent";
-import { visionAgent } from "../agents/vision.agent";
-import { pdfAgent } from "../agents/pdf.agent";
-import { pptAgent } from "../agents/ppt.agent";
-import { searchAgent } from "../agents/search.agent";
+import { agentState } from "./state.js";
+import { router } from "./router.js";
+import { chatAgent } from "../agents/chat.agent.js";
+import { codingAgent } from "../agents/coding.agent.js";
+import { visionAgent } from "../agents/vision.agent.js";
+import { pdfAgent } from "../agents/pdf.agent.js";
+import { pptAgent } from "../agents/ppt.agent.js";
+import { searchAgent } from "../agents/search.agent.js";
 
 const workflow = new StateGraph(agentState);
-workflow.addNode("end", END);
+
 workflow.addNode("router", router);
 workflow.addNode("chat", chatAgent);
 workflow.addNode("search", searchAgent);
@@ -51,7 +51,6 @@ workflow.addConditionalEdges(
 );
 workflow.addEdge("search", "chat");
 workflow.addEdge("chat", "__end__");
-workflow.addEdge("search", "__end__");
 workflow.addEdge("coding", "__end__");
 workflow.addEdge("pdf", "__end__");
 workflow.addEdge("ppt", "__end__");
