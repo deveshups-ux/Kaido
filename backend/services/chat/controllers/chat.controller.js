@@ -50,14 +50,14 @@ export const updateConversation = async (req, res) => {
 export const saveMessage = async (req, res) => {
   try {
     const { conversationId, role, content } = req.body;
-    const message = await Message.create({
+    const savedMessage = await Message.create({
       conversationId,
       content,
       role,
     });
     return res
       .status(201)
-      .json({ message: "Message saved successfully", message });
+      .json({ message: "Message saved successfully", data: savedMessage });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: `Internal server error ${error}` });
