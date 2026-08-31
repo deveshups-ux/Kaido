@@ -97,37 +97,43 @@ const Sidebar = () => {
 
         {/* Conversations list */}
         <div className="flex-1 overflow-y-auto px-2.5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {conversations.map((conv, i) => {
-            const isActive = selectedConversation?._id === conv?._id;
-            return (
-              <div
-                key={conv._id}
-                onClick={() => dispatch(setSelectedConversation(conv))}
-                className={`flex items-center gap-2.5 cursor-pointer mb-0.5 rounded-[10px] border transition-colors duration-150 px-2 py-2 ${
-                  isActive
-                    ? "bg-indigo-500/10 border-indigo-500/[0.18]"
-                    : "bg-transparent border-transparent"
-                }`}
-              >
+          {conversations && conversations.length > 0 ? (
+            conversations.map((conv, i) => {
+              const isActive = selectedConversation?._id === conv?._id;
+              return (
                 <div
-                  className={`flex items-center justify-center shrink-0 w-[28px] h-[28px] rounded-lg transition-colors duration-150 ${
+                  onClick={() => dispatch(setSelectedConversation(conv))}
+                  key={conv._id}
+                  className={`flex items-center gap-2.5 cursor-pointer mb-0.5 rounded-[10px] border transition-colors duration-150 px-2 py-2 ${
                     isActive
-                      ? "bg-indigo-500/15 text-indigo-400"
-                      : "bg-white/[0.05] text-slate-500"
+                      ? "bg-indigo-500/10 border-indigo-500/[0.18]"
+                      : "bg-transparent border-transparent"
                   }`}
                 >
-                  <MessageSquare size={13} />
+                  <div
+                    className={`flex items-center justify-center shrink-0 w-[28px] h-[28px] rounded-lg transition-colors duration-150 ${
+                      isActive
+                        ? "bg-indigo-500/15 text-indigo-400"
+                        : "bg-white/[0.05] text-slate-500"
+                    }`}
+                  >
+                    <MessageSquare size={13} />
+                  </div>
+                  <span
+                    className={`text-[13px] font-medium truncate ${
+                      isActive ? "text-slate-100" : "text-slate-300"
+                    }`}
+                  >
+                    {conv?.title || "New Chat"}
+                  </span>
                 </div>
-                <span
-                  className={`text-[13px] font-medium truncate ${
-                    isActive ? "text-slate-100" : "text-slate-300"
-                  }`}
-                >
-                  {conv?.title || "New Chat"}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <p className="text-xs text-slate-500 px-3 py-2">
+              No conversations yet
+            </p>
+          )}
         </div>
 
         <div className="mx-2.5 h-px bg-white/[0.06]" />

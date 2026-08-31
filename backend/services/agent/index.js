@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 import express from "express";
 import connectDb from "./config/db.js";
 import router from "./routes/agent.route.js";
@@ -9,7 +8,7 @@ const app = express();
 
 app.use(express.json());
 
-app.use("/api/agent", router);
+app.use("/", router);
 
 app.get("/", (req, res) => {
   res.json({ message: "AGENT service is running" });
