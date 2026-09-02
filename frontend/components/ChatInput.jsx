@@ -17,10 +17,17 @@ const ChatInput = () => {
     dispatch(addMessage({ role: "user", content: value.trim() }));
     setValue("");
     const data = await sendMessage(payload);
-    console.log(data);
-    dispatch(addMessage({ role: "assistant", content: data }));
+    if (data) {
+      dispatch(addMessage({ role: "assistant", content: data }));
+    } else {
+      dispatch(
+        addMessage({
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        }),
+      );
+    }
   };
-
   return (
     <div className="w-full overflow-hidden px-3 md:px-5 py-4 border-t border-white/[0.06] bg-[#0d0f14]">
       <div className="flex flex-col bg-white/[0.03] border border-white/[0.07] rounded-2xl px-4 pt-3.5 pb-2.5">
