@@ -1,7 +1,16 @@
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 import { getModel } from "../config/llmModels.js";
+import { getMemory } from "../config/memory.js";
 
 export const chatAgent = async (state) => {
   const llm = await getModel("chat");
+
+  const history = (await getMemory(state.conversationId)) || [];
+
   const CHAT_AGENT_SYSTEM_PROMPT = `You are a helpful, knowledgeable, and friendly AI assistant. Your job is to have natural conversations and help the user with whatever they need — answering questions, explaining concepts, brainstorming ideas, giving advice, writing content, solving problems, or just chatting.
 
 Rules:
@@ -36,16 +45,21 @@ Guidelines for how you respond:
 You are the "chat" node in a multi-agent system — this means the user's request has already been classified as general conversation (not coding, not document generation, not real-time search, not image analysis). Focus purely on being a great conversational assistant.
 `;
 
-  const response = await llm.invoke([
-    {
-      role: "system",
-      content: CHAT_AGENT_SYSTEM_PROMPT,
-    },
-    {
-      role: "human",
-      content: state.prompt,
-    },
-  ]);
+  const messages = [new SystemMessage(CHAT_AGENT_SYSTEM_PROMPT)];
+
+  history.forEach((msg) => {
+    if (msg.role === "user") {
+      messages.push(new HumanMessage(msg.content));
+    }
+    if (msg.role === "assistant") {
+      messages.push(new AIMessage(msg.content));
+    }
+  });
+
+  messages.push(new HumanMessage(state.prompt));
+
+  console.log("messages : ", messages);
+  const response = await llm.invoke(messages);
 
   return {
     ...state,
