@@ -6,6 +6,7 @@ import { addMessage, setMessages } from "../src/redux/messageSlice";
 import { createConversation } from "../features/createConversation";
 import {
   addConversation,
+  setConvTitle,
   setSelectedConversation,
 } from "../src/redux/conversationSlice";
 import { updateConversation } from "../features/updateConversation";
@@ -19,11 +20,20 @@ const ChatInput = () => {
     let conversation = selectedConversation;
     if (!conversation) {
       const conv = await createConversation();
+      if (!conv) {
+        dispatch(
+          addMessage({
+            role: "assistant",
+            content:
+              "Sorry, couldn't start a new conversation. Please try again.",
+          }),
+        );
+        return;
+      }
       dispatch(setSelectedConversation(conv));
       dispatch(addConversation(conv));
       conversation = conv;
     }
-
     if (conversation.title === "New conversation") {
       const conv = await updateConversation({
         id: conversation._id,
