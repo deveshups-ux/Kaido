@@ -49,11 +49,12 @@ export const updateConversation = async (req, res) => {
 
 export const saveMessage = async (req, res) => {
   try {
-    const { conversationId, role, content } = req.body;
+    const { conversationId, role, content, images } = req.body;
     const savedMessage = await Message.create({
       conversationId,
       content,
       role,
+      images,
     });
     return res
       .status(201)

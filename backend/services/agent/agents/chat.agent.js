@@ -11,7 +11,21 @@ export const chatAgent = async (state) => {
 
   const history = (await getMemory(state.conversationId)) || [];
 
+  const searchContext = state.searchResults
+    ? `
+  Web Search Results:
+  ${JSON.stringify(state.searchResults)}
+  Answer the user using onlt the above search results. If the search results are not relevant to the question, answer based on your knowledge and do not make up an answer.
+  `
+    : "";
+
   const CHAT_AGENT_SYSTEM_PROMPT = `You are a helpful, knowledgeable, and friendly AI assistant. Your job is to have natural conversations and help the user with whatever they need — answering questions, explaining concepts, brainstorming ideas, giving advice, writing content, solving problems, or just chatting.
+
+${searchContext}
+ If searchContext Exists:
+ - use search results to anser the user question.
+ - do not mention internal tools.
+
 
 Rules:
 - Respond in the same language or style used by the user. If the user asks in Hinglish (Hindi mixed with English using the Latin script), respond strictly in Hinglish. Do not use Devanagari script (Hindi text) unless specifically requested.

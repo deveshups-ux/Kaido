@@ -63,7 +63,7 @@ const ChatInput = () => {
     const payload = {
       prompt: value.trim(),
       conversationId: conversation?._id,
-      agent: selectedAgent,
+      agent: selectedAgent.toLowerCase(),
     };
 
     dispatch(addMessage({ role: "user", content: value.trim() }));
@@ -71,7 +71,14 @@ const ChatInput = () => {
 
     const data = await sendMessage(payload);
     if (data) {
-      dispatch(addMessage({ role: "assistant", content: data }));
+      dispatch(
+        addMessage({
+          role: "assistant",
+          content: data.answer,
+          images: data.images,
+        }),
+      );
+      console.log(data);
     } else {
       dispatch(
         addMessage({
