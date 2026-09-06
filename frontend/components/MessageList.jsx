@@ -43,7 +43,7 @@ const MessageList = () => {
               <MessageBubble
                 role={msg?.role}
                 content={msg?.content}
-                images={msg.images || []}
+                images={msg?.images || []}
               />
             </div>
           ))}

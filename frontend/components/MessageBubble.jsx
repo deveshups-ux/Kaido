@@ -111,7 +111,7 @@ const MessageBubble = ({ role, content, images = [] }) => {
                   href={href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-indigo-300 items-center gap-1 hover:text-indigo-200 underline "
+                  className="inline-flex text-indigo-300 items-center gap-1 hover:text-indigo-200 underline "
                 >
                   <ExternalLink size={14} />
                   {children}
