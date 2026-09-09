@@ -19,8 +19,8 @@ export const codingAgent = async (state) => {
         User Request:
         ${state.prompt}
     `);
-  const intent = intentRes.content;
-  if (intent == "CODE GENERATION") {
+  const intent = intentRes.content.trim().toUpperCase();
+  if (intent == "CODE_GENERATION") {
     const prompt = `
         You are Kaido AI Coding Agent.
 
@@ -80,7 +80,20 @@ export const codingAgent = async (state) => {
       `;
 
     const res = await llm.invoke(prompt);
-    const data = JSON.parse(res.content);
+    let data;
+    try {
+      const cleaned = res.content.trim().replace(/^```json\n?|\n?```$/g, "");
+      data = JSON.parse(cleaned);
+    } catch (e) {
+      console.error("Failed to parse coding agent JSON:", e, res.content);
+      return {
+        ...state,
+        aiResponse:
+          "Sorry, something went wrong while generating the project. Please try again.",
+        artifacts: [],
+      };
+    }
+
     return {
       ...state,
       aiResponse: "Code Generated Succesfully",
