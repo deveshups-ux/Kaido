@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import sendMessage from "../features/sendMessage";
-import { addMessage, setMessages } from "../src/redux/messageSlice";
+import {
+  addMessage,
+  setArtifacts,
+  setMessages,
+} from "../src/redux/messageSlice";
 import { createConversation } from "../features/createConversation";
 import {
   addConversation,
@@ -70,6 +74,7 @@ const ChatInput = () => {
     setValue("");
 
     const data = await sendMessage(payload);
+    dispatch(setArtifacts(data.artifacts));
     if (data) {
       dispatch(
         addMessage({
