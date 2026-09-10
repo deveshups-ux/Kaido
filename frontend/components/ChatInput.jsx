@@ -60,7 +60,7 @@ const ChatInput = () => {
       dispatch(
         setConvTitle({
           conversationId: conversation._id,
-          title: value.slice(0, 40),
+          title: value.trim().slice(0, 40),
         }),
       );
     }
@@ -74,8 +74,8 @@ const ChatInput = () => {
     setValue("");
 
     const data = await sendMessage(payload);
-    dispatch(setArtifacts(data.artifacts));
     if (data) {
+      dispatch(setArtifacts(data.artifacts || []));
       dispatch(
         addMessage({
           role: "assistant",
@@ -83,7 +83,6 @@ const ChatInput = () => {
           images: data.images,
         }),
       );
-      console.log(data);
     } else {
       dispatch(
         addMessage({
@@ -174,7 +173,7 @@ const ChatInput = () => {
 
           <button
             onClick={handleSendMessage}
-            disabled={!value}
+            disabled={!value.trim()}
             className={`flex items-center justify-center w-8 h-8 rounded-lg border-none cursor-pointer transition-all duration-150 ${value.trim() ? "bg-gradient-to-br from-indigo-500 to-violet-600 hover:opacity-90 text-white" : "bg-white/[0.05] text-slate-600 cursor-not-allowed"}`}
           >
             <Send size={16} />

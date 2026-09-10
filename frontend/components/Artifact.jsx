@@ -10,6 +10,11 @@ import {
 import { useSelector } from "react-redux";
 import { easeInOut, motion } from "motion/react";
 
+const escapeScriptTag = (str = "") =>
+  str.replace(/<\/script>/gi, "<\\/script>");
+
+const escapeStyleTag = (str = "") => str.replace(/<\/style>/gi, "<\\/style>");
+
 const Artifact = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [tab, setTab] = useState("code");
@@ -55,13 +60,13 @@ const Artifact = () => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-${cssFile?.content || ""}
+${escapeStyleTag(cssFile?.content || "")}
     </style>
 </head>
 <body>
 ${htmlFile?.content || ""}
 <script>
-${jsFile?.content || ""}
+${escapeScriptTag(jsFile?.content || "")}
 </script>
 </body>
 </html>`;
@@ -152,7 +157,7 @@ ${jsFile?.content || ""}
             <div className="flex h-auto border-b border-white/[0.06] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0">
               {files.map((f, index) => (
                 <button
-                  key={f?.name || index}
+                  key={`${f?.name || "file"}-${index}`}
                   onClick={() => setActiveFile(index)}
                   className={`px-4 py-2.5 text-[11px] font-medium whitespace-nowrap transition-colors duration-150 border-r border-white/[0.05] relative cursor-pointer bg-transparent ${
                     activeFile === index
@@ -179,7 +184,7 @@ ${jsFile?.content || ""}
                 className="w-full h-full"
               >
                 <iframe
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-modals"
                   title="preview"
                   srcDoc={previewDoc}
                   className="w-full bg-white h-full border-none"

@@ -73,7 +73,7 @@ const MessageBubble = ({ role, content, images = [] }) => {
           <div className="flex flex-wrap gap-3 mt-4 mb-3">
             {safeImages.map((img, index) => (
               <img
-                key={img || index}
+                key={`${img || "image"}-${index}`}
                 src={img}
                 alt="Search result"
                 loading="lazy"
@@ -108,8 +108,11 @@ const MessageBubble = ({ role, content, images = [] }) => {
               </div>
             ),
 
-            code({ inline, className, children, ...props }) {
-              if (inline) {
+            code({ className, children, ...props }) {
+              const codeString = String(children).replace(/\n$/, "");
+              const isInline = !codeString.includes("\n") && !className;
+
+              if (isInline) {
                 return (
                   <code
                     className="px-1.5 py-0.5 rounded-md bg-white/[0.08] text-indigo-300 text-[12.5px] font-mono"

@@ -9,7 +9,13 @@ import { getMemory } from "../config/memory.js";
 export const chatAgent = async (state) => {
   const llm = await getModel("chat");
 
-  const history = (await getMemory(state.conversationId)) || [];
+  let history = [];
+  try {
+    history = (await getMemory(state.conversationId)) || [];
+  } catch (error) {
+    console.error("Failed to fetch conversation memory:", error);
+    history = [];
+  }
 
   const searchContext = state.searchResults
     ? `
@@ -72,8 +78,17 @@ You are the "chat" node in a multi-agent system — this means the user's reques
 
   messages.push(new HumanMessage(state.prompt));
 
-  console.log("messages : ", messages);
-  const response = await llm.invoke(messages);
+  let response;
+  try {
+    response = await llm.invoke(messages);
+  } catch (error) {
+    console.error("LLM invocation failed:", error);
+    return {
+      ...state,
+      aiResponse:
+        "Sorry, I'm having trouble responding right now. Please try again.",
+    };
+  }
 
   return {
     ...state,
