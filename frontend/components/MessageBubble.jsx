@@ -161,6 +161,21 @@ const MessageBubble = ({ role, content, images = [] }) => {
             tbody({ children }) {
               return <tbody>{children}</tbody>;
             },
+            img: ({ src }) => {
+              if (!src) return null;
+              return (
+                <img
+                  src={src}
+                  alt="Search result"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                  onClick={() => setLightBox(src)}
+                  className="w-40 h-28 rounded-xl object-cover border border-white/10 cursor-zoom-in hover:opacity-90 transition"
+                />
+              );
+            },
 
             tr({ children }) {
               return (

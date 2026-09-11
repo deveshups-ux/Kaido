@@ -1,10 +1,11 @@
 import { getModel } from "../config/llmModels.js";
 
 export const codingAgent = async (state) => {
-  const llm = await getModel("coding");
-  const intentLlm = await getModel("intent");
+  try {
+    const llm = await getModel("coding");
+    const intentLlm = await getModel("intent");
 
-  const intentRes = await intentLlm.invoke(`
+    const intentRes = await intentLlm.invoke(`
 You are an intent classifier for a coding assistant.
 
 Classify the user's request into EXACTLY ONE of these categories:
@@ -26,9 +27,9 @@ User Request:
 ${state.prompt}
 `);
 
-  const intent = intentRes.content.trim().toUpperCase();
-  if (intent == "CODE_GENERATION") {
-    const prompt = `
+    const intent = intentRes.content.trim().toUpperCase();
+    if (intent == "CODE_GENERATION") {
+      const prompt = `
 You are Kaido, an expert AI coding agent that builds complete, working web projects.
 
 TASK: Generate a complete project based on the user's request below.
@@ -76,36 +77,36 @@ User Request:
 ${state.prompt}
 `;
 
-    const res = await llm.invoke(prompt);
-    let data;
-    try {
-      const cleaned = res.content.trim().replace(/^```json\n?|\n?```$/g, "");
-      data = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("Failed to parse coding agent JSON:", e, res.content);
+      const res = await llm.invoke(prompt);
+      let data;
+      try {
+        const cleaned = res.content.trim().replace(/^```json\n?|\n?```$/g, "");
+        data = JSON.parse(cleaned);
+      } catch (e) {
+        console.error("Failed to parse coding agent JSON:", e, res.content);
+        return {
+          ...state,
+          aiResponse:
+            "Sorry, something went wrong while generating the project. Please try again.",
+          artifacts: [],
+        };
+      }
+
       return {
         ...state,
-        aiResponse:
-          "Sorry, something went wrong while generating the project. Please try again.",
-        artifacts: [],
+        aiResponse: "Code Generated Succesfully",
+        artifacts: [
+          {
+            id: Date.now(),
+            type: "Project",
+            files: data.files || [],
+            title:
+              data.title || state.prompt?.slice(0, 60) || "Generated Project",
+          },
+        ],
       };
     }
-
-    return {
-      ...state,
-      aiResponse: "Code Generated Succesfully",
-      artifacts: [
-        {
-          id: Date.now(),
-          type: "Project",
-          files: data.files || [],
-          title:
-            data.title || state.prompt?.slice(0, 60) || "Generated Project",
-        },
-      ],
-    };
-  }
-  const res = await llm.invoke(`
+    const res = await llm.invoke(`
 You are Kaido, an expert coding assistant.
 
 The user's request has been classified as: ${intent}
@@ -128,10 +129,16 @@ User Request:
 ${state.prompt}
 `);
 
-  const data = res.content;
-  return {
-    ...state,
-    aiResponse: data,
-    artifacts: [],
-  };
+    const data = res.content;
+    return {
+      ...state,
+      aiResponse: data,
+      artifacts: [],
+    };
+  } catch (error) {
+    return {
+      ...state,
+      aiResponse: "Failed to generate response.",
+    };
+  }
 };

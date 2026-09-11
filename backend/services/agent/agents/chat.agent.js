@@ -7,25 +7,26 @@ import { getModel } from "../config/llmModels.js";
 import { getMemory } from "../config/memory.js";
 
 export const chatAgent = async (state) => {
-  const llm = await getModel("chat");
-
-  let history = [];
   try {
-    history = (await getMemory(state.conversationId)) || [];
-  } catch (error) {
-    console.error("Failed to fetch conversation memory:", error);
-    history = [];
-  }
+    const llm = await getModel("chat");
 
-  const searchContext = state.searchResults
-    ? `
+    let history = [];
+    try {
+      history = (await getMemory(state.conversationId)) || [];
+    } catch (error) {
+      console.error("Failed to fetch conversation memory:", error);
+      history = [];
+    }
+
+    const searchContext = state.searchResults
+      ? `
   Web Search Results:
   ${JSON.stringify(state.searchResults)}
   Answer the user using onlt the above search results. If the search results are not relevant to the question, answer based on your knowledge and do not make up an answer.
   `
-    : "";
+      : "";
 
-  const CHAT_AGENT_SYSTEM_PROMPT = `You are a helpful, knowledgeable, and friendly AI assistant. Your job is to have natural conversations and help the user with whatever they need — answering questions, explaining concepts, brainstorming ideas, giving advice, writing content, solving problems, or just chatting.
+    const CHAT_AGENT_SYSTEM_PROMPT = `You are a helpful, knowledgeable, and friendly AI assistant. Your job is to have natural conversations and help the user with whatever they need — answering questions, explaining concepts, brainstorming ideas, giving advice, writing content, solving problems, or just chatting.
 
 ${searchContext}
  If searchContext Exists:
@@ -65,33 +66,39 @@ Guidelines for how you respond:
 You are the "chat" node in a multi-agent system — this means the user's request has already been classified as general conversation (not coding, not document generation, not real-time search, not image analysis). Focus purely on being a great conversational assistant.
 `;
 
-  const messages = [new SystemMessage(CHAT_AGENT_SYSTEM_PROMPT)];
+    const messages = [new SystemMessage(CHAT_AGENT_SYSTEM_PROMPT)];
 
-  history.forEach((msg) => {
-    if (msg.role === "user") {
-      messages.push(new HumanMessage(msg.content));
+    history.forEach((msg) => {
+      if (msg.role === "user") {
+        messages.push(new HumanMessage(msg.content));
+      }
+      if (msg.role === "assistant") {
+        messages.push(new AIMessage(msg.content));
+      }
+    });
+
+    messages.push(new HumanMessage(state.prompt));
+
+    let response;
+    try {
+      response = await llm.invoke(messages);
+    } catch (error) {
+      console.error("LLM invocation failed:", error);
+      return {
+        ...state,
+        aiResponse:
+          "Sorry, I'm having trouble responding right now. Please try again.",
+      };
     }
-    if (msg.role === "assistant") {
-      messages.push(new AIMessage(msg.content));
-    }
-  });
 
-  messages.push(new HumanMessage(state.prompt));
-
-  let response;
-  try {
-    response = await llm.invoke(messages);
-  } catch (error) {
-    console.error("LLM invocation failed:", error);
     return {
       ...state,
-      aiResponse:
-        "Sorry, I'm having trouble responding right now. Please try again.",
+      aiResponse: response.content,
+    };
+  } catch (error) {
+    return {
+      ...state,
+      aiResponse: "Failed to generate response.",
     };
   }
-
-  return {
-    ...state,
-    aiResponse: response.content,
-  };
 };
