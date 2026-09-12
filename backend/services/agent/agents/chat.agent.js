@@ -96,6 +96,7 @@ You are the "chat" node in a multi-agent system — this means the user's reques
       aiResponse: response.content,
     };
   } catch (error) {
+    console.error("Chat agent failed:", error);
     return {
       ...state,
       aiResponse: "Failed to generate response.",
