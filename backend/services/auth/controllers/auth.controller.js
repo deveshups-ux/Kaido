@@ -73,8 +73,8 @@ export const updateUserPayment = async (req, res) => {
     }
     user.plan = plan;
     user.credits += credits;
-    user.totalCredits += totalCredits;
-    user.planExpiresAt = new Date(Date.now() + 30 * 24 * 24 * 60);
+    user.totalCredits += credits;
+    user.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await user.save();
     const sessionId = req.cookies?.session;
     await redis.set(
@@ -92,6 +92,7 @@ export const updateUserPayment = async (req, res) => {
       "EX",
       7 * 24 * 60 * 60,
     );
+    return res.status(200).json({ message: "update user payment succesfully" });
   } catch (error) {
     return res
       .status(500)

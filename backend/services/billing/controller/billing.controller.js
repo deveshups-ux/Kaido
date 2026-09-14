@@ -1,8 +1,9 @@
 import { error } from "console";
-import { PLANS } from "../config/Plans";
-import razorpay from "../config/razorpay";
-import Payment from "../model/payment.model";
+import { PLANS } from "../config/Plans.js";
+import razorpay from "../config/razorpay.js";
+import Payment from "../model/payment.model.js";
 import crypto from "crypto";
+import axios from "axios";
 export const createOrder = async (req, res) => {
   try {
     const { plan } = req.body;
@@ -30,7 +31,10 @@ export const createOrder = async (req, res) => {
 
     return res.status(200).json({ order, plan: selectedPlan });
   } catch (error) {
-    return res.json(404).json({ message: `create order error ${error}` });
+    console.error("[createOrder]", error);
+    return res
+      .status(500)
+      .json({ message: `create order error: ${error.message}` });
   }
 };
 
@@ -47,21 +51,27 @@ export const verifyPayment = async (req, res) => {
     if (generateSignature !== razorpay_signature) {
       return res.status(400).json({ message: "Payment verification failed." });
     }
-    const payment = await Payment.findOne({ orderId: razorpay_order_id });
 
+    const payment = await Payment.findOne({ orderId: razorpay_order_id });
     if (!payment) {
       return res.status(404).json({ message: "Payment not found" });
     }
+
     payment.status = "paid";
     payment.paymentId = razorpay_payment_id;
     await payment.save();
 
-    await axios.post(`${process.env.AUTH_SERVIC}/update-plan`, {
+    await axios.post(`${process.env.AUTH_SERVICE}/api/auth/update-plan`, {
       userId: payment.userId,
       plan: payment.plan,
       credits: payment.credits,
     });
+
     return res.status(200).json({ message: "payment verified" });
-  } catch (error) {}
-  return res.status(500).json({ message: `verified payment error ${error}` });
+  } catch (error) {
+    console.error("[verifyPayment]", error);
+    return res
+      .status(500)
+      .json({ message: `verified payment error: ${error.message}` });
+  }
 };

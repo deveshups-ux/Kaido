@@ -3,7 +3,7 @@ const paymentSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
-      require: true,
+      required: true,
     },
     orderId: {
       type: String,
@@ -19,7 +19,7 @@ const paymentSchema = new mongoose.Schema(
       type: Number,
     },
     plan: {
-      type: Number,
+      type: String,
     },
     status: {
       type: String,
