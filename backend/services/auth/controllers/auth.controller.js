@@ -3,6 +3,7 @@ import { app } from "../config/firebase.js";
 import User from "../models/user.model.js";
 import crypto from "crypto";
 import redis from "../../../shared/Redis/redis.js";
+
 export const login = async (req, res) => {
   try {
     const { token } = req.body;

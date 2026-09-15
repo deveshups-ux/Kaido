@@ -24,6 +24,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [creating, setCreating] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
   const dispatch = useDispatch();
 
   const { conversations, selectedConversation } = useSelector(
@@ -229,7 +230,10 @@ const Sidebar = () => {
                 </p>
               </div>
               <div className="flex gap-1">
-                <button className="flex items-center justify-center w-7 h-7 rounded-[7px] border-none bg-transparent text-yellow-500 cursor-pointer hover:bg-white/[0.08] hover:text-slate-400 transition-all duration-150">
+                <button
+                  onClick={() => setShowBilling(true)}
+                  className="flex items-center justify-center w-7 h-7 rounded-[7px] border-none bg-transparent text-yellow-500 cursor-pointer hover:bg-white/[0.08] hover:text-slate-400 transition-all duration-150"
+                >
                   <Coins size={16} />
                 </button>
                 <button
