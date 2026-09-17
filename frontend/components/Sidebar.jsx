@@ -19,6 +19,7 @@ import {
 } from "../src/redux/conversationSlice";
 import { createConversation } from "../features/createConversation";
 import logOut from "../features/logOut";
+import BillingDrawer from "./BillingDrawer";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -252,6 +253,7 @@ const Sidebar = () => {
           )}
         </div>
       </div>
+      <BillingDrawer open={showBilling} onClose={() => setShowBilling(false)} />
     </div>
   );
 };

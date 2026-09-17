@@ -4,6 +4,7 @@ import { addMessage } from "../config/memory.js";
 
 export const agent = async (req, res) => {
   try {
+    const userId = req.headers["x-user-id"];
     const { prompt, conversationId, agent } = req.body;
     await axios.post(`${process.env.CHAT_SERVICE}/save-message`, {
       conversationId,

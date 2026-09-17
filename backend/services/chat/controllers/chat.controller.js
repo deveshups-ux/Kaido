@@ -33,10 +33,16 @@ export const getConversation = async (req, res) => {
 
 export const updateConversation = async (req, res) => {
   try {
+    const userId = req.headers["x-user-id"];
     const { id, title } = req.body;
-    const conversation = await Conversation.findByIdAndUpdate(id, {
-      title,
-    });
+    const conversation = await Conversation.findOneAndUpdate(
+      { _id: id, userId },
+      { title },
+      { new: true },
+    );
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
     return res.status(200).json({
       message: "Conversation title updated successfully",
       conversation,
@@ -68,6 +74,14 @@ export const saveMessage = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
+    const userId = req.headers["x-user-id"];
+    const conversation = await Conversation.findOne({
+      _id: req.params.conversationId,
+      userId,
+    });
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
     const messages = await Message.find({
       conversationId: req.params.conversationId,
     });

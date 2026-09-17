@@ -76,8 +76,27 @@ ${state.prompt}
 `;
 
   const response = await llm.invoke(prompt);
+  let node = "chat";
+  try {
+    const cleaned = response.content
+      .trim()
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/, "")
+      .replace(/```$/, "");
+    const parsed = JSON.parse(cleaned);
+    const validAgents = ["chat", "search", "coding", "pdf", "ppt", "vision"];
+    if (validAgents.includes(parsed.node)) {
+      node = parsed.node;
+    }
+  } catch (e) {
+    console.error(
+      "Router: failed to parse LLM JSON, defaulting to chat:",
+      response.content,
+    );
+  }
+
   return {
     ...state,
-    agent: response.content.trim().toLowerCase(),
+    agent: node,
   };
 };
