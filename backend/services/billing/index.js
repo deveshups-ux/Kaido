@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import connectDb from "./config/db.js";
 import cookieParser from "cookie-parser";
 import router from "./routes/billing.route.js";
-dotenv.config();
 const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(express.json());

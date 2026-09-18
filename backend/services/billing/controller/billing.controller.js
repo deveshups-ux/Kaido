@@ -1,6 +1,5 @@
-import { error } from "console";
 import { PLANS } from "../config/Plans.js";
-import razorpay from "../config/razorpay.js";
+import { getRazorpay } from "../config/razorpay.js";
 import Payment from "../model/payment.model.js";
 import crypto from "crypto";
 import axios from "axios";
@@ -13,7 +12,7 @@ export const createOrder = async (req, res) => {
       return res.status(404).json({ message: "plan not found" });
     }
 
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount: selectedPlan.amount * 100,
       currency: "INR",
       receipt: `receipt-${Date.now()}`,
@@ -61,7 +60,7 @@ export const verifyPayment = async (req, res) => {
     payment.paymentId = razorpay_payment_id;
     await payment.save();
 
-    await axios.post(`${process.env.AUTH_SERVICE}/api/auth/update-plan`, {
+    await axios.post(`${process.env.AUTH_SERVICE}/update-plan`, {
       userId: payment.userId,
       plan: payment.plan,
       credits: payment.credits,
