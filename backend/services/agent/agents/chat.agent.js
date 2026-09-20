@@ -9,7 +9,6 @@ import { deductCredits } from "../utils/deductCredits.js";
 
 export const chatAgent = async (state) => {
   try {
-    await deductCredits(state.userId, "chat");
     const llm = await getModel("chat");
 
     let history = [];
@@ -84,6 +83,7 @@ You are the "chat" node in a multi-agent system — this means the user's reques
     let response;
     try {
       response = await llm.invoke(messages);
+      await deductCredits(state.userId, "chat");
     } catch (error) {
       console.error("LLM invocation failed:", error);
       return {

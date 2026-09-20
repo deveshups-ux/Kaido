@@ -1,4 +1,5 @@
 import { getModel } from "../config/llmModels.js";
+import { deductCredits } from "../utils/deductCredits.js";
 import { generatePdf } from "../utils/generatePdf.js";
 import { getFromS3 } from "../utils/getFromS3.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
@@ -45,6 +46,7 @@ ${state.prompt}
           "Sorry, something went wrong while generating the PDF content. Please try again.",
       };
     }
+    await deductCredits(state.userId, "pdf");
     const pdfBuffer = await generatePdf(data);
     const filename = `pdf-${Date.now()}.pdf`;
     await uploadToS3(filename, pdfBuffer, "application/pdf");
