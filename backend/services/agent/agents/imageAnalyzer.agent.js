@@ -51,8 +51,10 @@ Rules:
       aiResponse: "Failed to analyze file",
     };
   } finally {
-    await fs.unlink(state.file.path, (err) => {
-      if (err) console.log("Error deleting file:", err);
-    });
+    try {
+      await fs.unlink(state.file.path);
+    } catch (err) {
+      console.log("Error deleting file:", err);
+    }
   }
 };
