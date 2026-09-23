@@ -1,5 +1,5 @@
 import { QdrantVectorStore } from "@langchain/qdrant";
-import { embeddings } from "./embeddings";
+import { embeddings } from "./embeddings.js";
 import dotenv from "dotenv";
 dotenv.config();
 export const vectorStore = async (docs, collectionName) => {
