@@ -16,8 +16,8 @@ const openRouter = new ChatOpenRouter({
 });
 
 const gemini = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-pro",
-  temperature: 0,
+  model: "gemini-3.1-flash-lite",
+  temperature: 1,
   maxRetries: 2,
 });
 

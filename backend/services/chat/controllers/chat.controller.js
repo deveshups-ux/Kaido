@@ -38,7 +38,7 @@ export const updateConversation = async (req, res) => {
     const conversation = await Conversation.findOneAndUpdate(
       { _id: id, userId },
       { title },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!conversation) {
       return res.status(404).json({ message: "Conversation not found" });

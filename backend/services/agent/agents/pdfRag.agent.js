@@ -1,5 +1,5 @@
 import fs from "fs";
-import PDFParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { vectorStore } from "../config/vectorDb.js";
