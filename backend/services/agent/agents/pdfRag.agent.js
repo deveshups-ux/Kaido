@@ -1,6 +1,7 @@
 import fs from "fs";
 import PDFParse from "pdf-parse";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { vectorStore } from "../config/vectorDb.js";
 import { getModel } from "../config/llmModels.js";
 import { deductCredits } from "../utils/deductCredits.js";
@@ -11,7 +12,7 @@ export const pdfRag = async (state) => {
     const pdf = new PDFParse({
       data: buffer,
     });
-    const result = pdf.getText();
+    const result = await pdf.getText();
     const text = result.text;
 
     const splitter = new RecursiveCharacterTextSplitter({
@@ -20,10 +21,10 @@ export const pdfRag = async (state) => {
     });
     const docs = await splitter.createDocuments([text]);
     const collectionName = `pdf-${Date.now()}`;
-    const store = vectorStore(docs, collectionName);
+    const store = await vectorStore(docs, collectionName);
     const relevantDocs = await store.similaritySearch(state.prompt, 5);
-    const context = relevantDocs.map((d) => d.pageContent).join("/n/n");
-    const llm = await getModel("pfdRag");
+    const context = relevantDocs.map((d) => d.pageContent).join("\n\n");
+    const llm = await getModel("pdfRag");
 
     const messages = [
       new SystemMessage(`You are CortexAI PDF Assistant.
@@ -46,7 +47,7 @@ Rules:
             `),
     ];
 
-    const response = llm.invoke(messages);
+    const response = await llm.invoke(messages);
     await deductCredits(state.userId, "pdf");
     return {
       ...state,
@@ -59,6 +60,10 @@ Rules:
       aiResponse: "Failed to analyze PDF",
     };
   } finally {
-    fs.unlinkSync(state.file.path);
+    try {
+      fs.unlinkSync(state.file.path);
+    } catch (err) {
+      console.log("Error deleting file:", err);
+    }
   }
 };
