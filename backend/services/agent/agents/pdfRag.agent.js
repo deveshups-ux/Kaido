@@ -5,8 +5,10 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { vectorStore } from "../config/vectorDb.js";
 import { getModel } from "../config/llmModels.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { checkAgentLimit } from "../config/agentLimit.js";
 
 export const pdfRag = async (state) => {
+  await checkAgentLimit(state.userId, "pdf");
   try {
     const buffer = fs.readFileSync(state.file.path);
     const pdf = new PDFParse({

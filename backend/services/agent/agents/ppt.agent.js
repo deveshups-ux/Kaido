@@ -3,8 +3,10 @@ import { generatePpt } from "../utils/generatePpt.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { getFromS3 } from "../utils/getFromS3.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { checkAgentLimit } from "../config/agentLimit.js";
 
 export const pptAgent = async (state) => {
+  await checkAgentLimit(state.userId, "ppt");
   try {
     if (!state?.prompt?.trim()) {
       return {
@@ -97,8 +99,7 @@ _Link expires in 1 day._`,
     console.error("[pptAgent]", error);
     return {
       ...state,
-
-      aiResponse: `Failed to generate PPT: ${error.message}`,
+      aiResponse: error?.data?.message || "failed to generate pppt",
     };
   }
 };
