@@ -99,7 +99,8 @@ _Link expires in 1 day._`,
     console.error("[pptAgent]", error);
     return {
       ...state,
-      aiResponse: error?.data?.message || "failed to generate pppt",
+
+      aiResponse: `Failed to generate PPT: ${error.message}`,
     };
   }
 };

@@ -83,7 +83,7 @@ const ChatInput = () => {
     const data = await sendMessage(formData);
     dispatch(setIsLoading(false));
     setSelectedFile(null);
-    if (data) {
+    if (data && !data.error) {
       dispatch(setArtifacts(data.artifacts || []));
       dispatch(
         addMessage({
@@ -96,7 +96,8 @@ const ChatInput = () => {
       dispatch(
         addMessage({
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content:
+            data?.message || "Sorry, something went wrong. Please try again.",
         }),
       );
     }
