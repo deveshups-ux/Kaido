@@ -16,6 +16,12 @@
   <img alt="AWS S3" src="https://img.shields.io/badge/AWS%20S3-232F3E?style=flat&logo=amazonaws&logoColor=white">
 </p>
 
+<p align="center">
+  <a href="https://github.com/deveshups-ux/Kaido">Repository</a> ·
+  <a href="https://www.linkedin.com/in/devesh-tiwari-642b03374">LinkedIn</a> ·
+  <a href="https://github.com/deveshups-ux">GitHub Profile</a>
+</p>
+
 > **Status:** Core platform complete — authentication, billing, and eight specialist agents are live. Production deployment (AWS) is in progress.
 
 ## Table of Contents
@@ -23,12 +29,15 @@
 - [Overview](#overview)
 - [Highlights](#highlights)
 - [Screenshots](#screenshots)
+- [Agents at a glance](#agents-at-a-glance)
 - [Architecture](#architecture)
+- [Request flow](#request-flow)
 - [Engineering Highlights](#engineering-highlights)
 - [Stack](#stack)
 - [Repository layout](#repository-layout)
 - [Local setup](#local-setup)
 - [How routing works](#how-routing-works)
+- [Plans & usage](#plans--usage)
 - [Roadmap](#roadmap)
 - [Project decisions](#project-decisions)
 
@@ -76,13 +85,27 @@ Most personal AI projects stop at "call one API and display the response." Kaido
 
 ## Screenshots
 
-<!-- Screenshot files live in /screenshots — add billing.png and image-gen.png when ready. -->
+<!-- Screenshot files live in /screenshots -->
 
 | | |
 |---|---|
 | **Sign-in** <br> ![Login](./screenshots/login.png) | **Chat Interface** <br> ![Chat](./screenshots/chat.png) |
-| **Structured AI Responses** <br> ![Markdown](./screenshots/markdown-response.png) | **Document Generation (PDF/PPT)** <br> ![Generation](./screenshots/generation.png) |
-| **Live Code Preview (Artifacts)** <br> ![Artifact Preview](./screenshots/artifact-preview.png) | *Billing screenshot — coming soon* |
+| **Structured AI Responses** <br> ![Markdown](./screenshots/markdown-response.png) | **PDF Generation** <br> ![PDF Generation](./screenshots/generation.png) |
+| **Live Code Preview (Artifacts)** <br> ![Artifact Preview](./screenshots/artifact-preview.png) | **PPT & Image Generation** <br> ![PPT and Image Generation](./screenshots/ppt-image-generation.png) |
+| **PDF Q&A (RAG)** <br> ![PDF Q&A](./screenshots/pdf-rag.png) | **Billing & Credits** <br> ![Billing](./screenshots/billing.png) |
+
+## Agents at a glance
+
+| Agent | What it does | Powered by | Output |
+| --- | --- | --- | --- |
+| **Chat** | General conversation, reasoning, explanations, writing help | Groq (`gpt-oss-120b`) | Markdown text |
+| **Search** | Answers time-sensitive questions from the live web | Tavily search + Groq | Text with sources and images |
+| **Coding** | Classifies the request (generate, review, explain, debug, optimize, convert, document), then responds accordingly | DeepSeek via OpenRouter; Groq for intent classification | Code with a live preview panel |
+| **PDF Generator** | Turns a topic into a structured report | Groq (structured JSON) + pdfkit | Downloadable PDF on AWS S3 (24-hour link) |
+| **PPT Generator** | Turns a topic into a slide deck | Groq (structured JSON) + pptxgenjs | Downloadable PPTX on AWS S3 (24-hour link) |
+| **Image Generator** | Expands a request into a detailed image prompt, then generates the image | Groq (prompt writing) + Pollinations.ai (image) | PNG on AWS S3 |
+| **Image Analyzer** | Reads an uploaded image: extracts text, explains charts, answers questions | Gemini (`gemini-3.1-flash-lite`) | Markdown text |
+| **PDF Q&A (RAG)** | Answers questions strictly from an uploaded PDF | Gemini embeddings + Qdrant + Groq | Markdown text |
 
 ## Architecture
 
@@ -122,6 +145,47 @@ flowchart LR
   SE --> TV[Tavily Search]
   RAG --> EMB[Gemini Embeddings]
   EMB --> QD
+```
+
+## Request flow
+
+What happens from the moment a prompt is submitted to the moment the answer appears:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User
+  participant UI as React UI
+  participant GW as API Gateway
+  participant AG as Agent Service
+  participant RT as LangGraph Router
+  participant SA as Specialist Agent
+  participant RD as Redis
+  participant AU as Auth Service
+  participant CH as Chat Service
+
+  User->>UI: Prompt (plus optional PDF or image)
+  UI->>GW: POST /api/agent/chat (session cookie)
+  GW->>RD: Validate session
+  GW->>AG: Forward request with x-user-id
+  AG->>CH: Save user message
+  AG->>RT: Invoke graph (prompt, agent, file)
+  alt Agent chosen manually
+    RT-->>SA: Use the chosen agent
+  else Auto mode with a file
+    RT-->>SA: MIME type decides (PDF to RAG, image to Analyzer)
+  else Auto mode, text only
+    RT->>RT: Routing model picks an agent from intent
+    RT-->>SA: Chosen agent
+  end
+  SA->>RD: Check per-agent rate limit
+  SA->>SA: Do the work (LLM, Tavily, Qdrant, S3)
+  SA->>AU: Deduct credits (only after success)
+  AU->>RD: Refresh cached session
+  SA-->>AG: Response (text, images, artifacts)
+  AG->>RD: Update recent-memory window
+  AG->>CH: Save assistant message
+  AG-->>UI: Answer, images, artifacts
 ```
 
 ## Engineering Highlights
@@ -280,6 +344,29 @@ Every chat request carries an `agent` field. If it's a specific agent (Chat, Sea
 
 This keeps routing fast (file-based decisions skip the LLM call entirely) and keeps the system easy to extend — adding a new agent means adding one more node to the graph.
 
+## Plans & usage
+
+Every account starts on the Free plan. Paid plans are bought through Razorpay, and the credits from a purchase are added to the existing balance.
+
+| Plan | Price | Credits | Validity |
+| --- | --- | --- | --- |
+| Free | ₹0 | 100 | Default on sign-up |
+| Starter | ₹199 | 500 | 30 days |
+| Pro | ₹499 | 1000 | 30 days |
+
+Each successful request costs credits, and each agent has its own per-user rate limit (Redis-backed, one-minute window):
+
+| Agent | Credits per request | Rate limit (per user, per minute) |
+| --- | --- | --- |
+| Chat | 1 | 20 |
+| Search | 5 | 5 |
+| Coding | 10 | 5 |
+| PDF Generator | 10 | 5 |
+| PPT Generator | 10 | 5 |
+| Image Generator | 10 | 5 |
+| Image Analyzer | 10 | 5 |
+| PDF Q&A (RAG) | 10 | 5 |
+
 ## Roadmap
 
 ### Part 3 — Deployment
@@ -316,8 +403,12 @@ This is currently a personal learning and portfolio project. Constructive feedba
 
 ## Author
 
-Built as an incremental project — a routed, multi-agent AI platform with real usage controls and billing, not a single-endpoint chatbot demo.
+Built by **Devesh Tiwari** as an incremental project — a routed, multi-agent AI platform with real usage controls and billing, not a single-endpoint chatbot demo.
+
+- GitHub: [github.com/deveshups-ux](https://github.com/deveshups-ux)
+- LinkedIn: [linkedin.com/in/devesh-tiwari-642b03374](https://www.linkedin.com/in/devesh-tiwari-642b03374)
+- Repository: [github.com/deveshups-ux/Kaido](https://github.com/deveshups-ux/Kaido)
 
 ---
 
-If you found this project useful, consider giving it a star when the public repository is live.
+If you found this project useful, consider giving it a star on [GitHub](https://github.com/deveshups-ux/Kaido).
