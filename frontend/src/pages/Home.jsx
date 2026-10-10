@@ -16,9 +16,26 @@ const Home = () => {
   const [loading, setLoading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState("");
 
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data } = await api.get("/api/me");
+        if (data?.user) {
+          dispatch(setUserData(data.user));
+        }
+      } catch (_) {
+        // User not logged in yet
+      }
+    };
+    checkAuth();
+  }, [dispatch]);
+
   const handleLogin = async (token) => {
     try {
       const { data } = await api.post("/api/auth/login", { token });
+      if (data?.sessionId) {
+        localStorage.setItem("kaido_session_id", data.sessionId);
+      }
       dispatch(setUserData(data.user || data));
       console.log("Login Success:", data);
     } catch (error) {
