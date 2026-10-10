@@ -11,13 +11,23 @@ let serviceAccount = null;
 // 1. Check Environment Variable
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    let raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+    if (!raw.startsWith("{") && !raw.startsWith('"')) {
+      try {
+        const decoded = Buffer.from(raw, "base64").toString("utf-8");
+        if (decoded.startsWith("{")) {
+          raw = decoded;
+        }
+      } catch (_) {}
+    }
+    serviceAccount = typeof raw === "object" ? raw : JSON.parse(raw);
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(
         /\\n/g,
         "\n",
       );
     }
+    console.log("Firebase Admin initialized successfully from env var");
   } catch (e) {
     console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT env var:", e);
   }
