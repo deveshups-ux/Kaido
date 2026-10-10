@@ -1,5 +1,77 @@
 services:
   redis:
-    image: redis
+    image: redis:alpine
+    container_name: kaido-redis
+    restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: kaido-auth
+    restart: always
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./services/auth/.env
+    depends_on:
+      - redis
+
+  chat:
+    build:
+      context: .
+      dockerfile: services/chat/Dockerfile
+    container_name: kaido-chat
+    restart: always
+    ports:
+      - "8002:8002"
+    env_file:
+      - ./services/chat/.env
+
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    container_name: kaido-agent
+    restart: always
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./services/agent/.env
+    depends_on:
+      - redis
+
+  billing:
+    build:
+      context: .
+      dockerfile: services/billing/Dockerfile
+    container_name: kaido-billing
+    restart: always
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./services/billing/.env
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: kaido-gateway
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./gateway/.env
+    depends_on:
+      - redis
+      - auth
+      - chat
+      - agent
+      - billing
+
+volumes:
+  redis_data:

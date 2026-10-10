@@ -2,8 +2,9 @@ import axios from "axios";
 
 export const deductCredits = async (userId, agent) => {
   try {
+    const authUrl = process.env.AUTH_SERVICE || `http://localhost:${process.env.PORT || 8000}/api/auth`;
     const { data } = await axios.post(
-      `${process.env.AUTH_SERVICE}/deduct-credits`,
+      `${authUrl}/deduct-credits`,
       { userId, agent },
     );
 
