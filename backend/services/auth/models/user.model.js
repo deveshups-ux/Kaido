@@ -34,5 +34,7 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-const User = mongoose.model("User", userSchema);
+import { createDbModel } from "../../../shared/db/modelHelper.js";
+
+const User = createDbModel("auth", "User", userSchema);
 export default User;

@@ -19,6 +19,9 @@ const protect = async (req, res, next) => {
     }
 
     req.user = JSON.parse(session);
+    if (req.user?.userId) {
+      req.headers["x-user-id"] = req.user.userId.toString();
+    }
     next();
   } catch (error) {
     console.error("Auth middleware error:", error);

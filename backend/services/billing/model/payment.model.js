@@ -32,5 +32,7 @@ const paymentSchema = new mongoose.Schema(
   },
 );
 
-const Payment = mongoose.model("Payment", paymentSchema);
+import { createDbModel } from "../../../shared/db/modelHelper.js";
+
+const Payment = createDbModel("billing", "Payment", paymentSchema);
 export default Payment;

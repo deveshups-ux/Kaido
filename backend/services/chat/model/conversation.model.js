@@ -15,6 +15,8 @@ const conversationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-const Conversation = mongoose.model("Conversation", conversationSchema);
+import { createDbModel } from "../../../shared/db/modelHelper.js";
+
+const Conversation = createDbModel("chat", "Conversation", conversationSchema);
 
 export default Conversation;

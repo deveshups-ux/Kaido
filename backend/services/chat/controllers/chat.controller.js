@@ -3,7 +3,7 @@ import Message from "../model/message.model.js";
 
 export const createConversation = async (req, res) => {
   try {
-    const userId = req.headers["x-user-id"];
+    const userId = req.headers["x-user-id"] || req.user?.userId || req.user?._id;
     console.log(userId);
     const conversation = await Conversation.create({ userId: userId });
     return res
@@ -17,7 +17,7 @@ export const createConversation = async (req, res) => {
 
 export const getConversation = async (req, res) => {
   try {
-    const userId = req.headers["x-user-id"];
+    const userId = req.headers["x-user-id"] || req.user?.userId || req.user?._id;
     console.log("userId : ", userId);
     const conversation = await Conversation.find({ userId: userId }).sort({
       updatedAt: -1,
@@ -33,7 +33,7 @@ export const getConversation = async (req, res) => {
 
 export const updateConversation = async (req, res) => {
   try {
-    const userId = req.headers["x-user-id"];
+    const userId = req.headers["x-user-id"] || req.user?.userId || req.user?._id;
     const { id, title } = req.body;
     const conversation = await Conversation.findOneAndUpdate(
       { _id: id, userId },
@@ -74,7 +74,7 @@ export const saveMessage = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const userId = req.headers["x-user-id"];
+    const userId = req.headers["x-user-id"] || req.user?.userId || req.user?._id;
     const conversation = await Conversation.findOne({
       _id: req.params.conversationId,
       userId,
