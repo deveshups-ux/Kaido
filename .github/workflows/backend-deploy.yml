@@ -1,14 +1,12 @@
 name: Deploy Backend to AWS ECS
 
-# KAB CHALEGA (Trigger):
-# Jab bhi 'main' branch par push ho, aur specifically 'backend/' folder ke andar koi change ho.
 on:
   push:
     branches:
       - main
     paths:
       - 'backend/**'
-  workflow_dispatch: # Isse aap GitHub par button daba kar bhi manually chala sakte ho
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-south-1
@@ -21,11 +19,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Code Download (Checkout)
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. AWS se Connect hona (Authentication)
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -33,42 +29,41 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 3. Amazon ECR (Docker Registry) mein Login
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 4. Gateway Docker Image Build & Push
+      # 1. Gateway
       - name: Build and Push Gateway Image
         run: |
           docker build -t $ECR_REGISTRY/kaido-gateway:latest -f backend/gateway/Dockerfile ./backend
           docker push $ECR_REGISTRY/kaido-gateway:latest
 
-      # 5. Auth Service Docker Image Build & Push
+      # 2. Auth Service
       - name: Build and Push Auth Image
         run: |
-          docker build -t $ECR_REGISTRY/kaido-auth:latest -f backend/services/auth/Dockerfile ./backend
-          docker push $ECR_REGISTRY/kaido-auth:latest
+          docker build -t $ECR_REGISTRY/kaido-auth-service:latest -f backend/services/auth/Dockerfile ./backend
+          docker push $ECR_REGISTRY/kaido-auth-service:latest
 
-      # 6. Chat Service Docker Image Build & Push
+      # 3. Chat Service
       - name: Build and Push Chat Image
         run: |
-          docker build -t $ECR_REGISTRY/kaido-chat:latest -f backend/services/chat/Dockerfile ./backend
-          docker push $ECR_REGISTRY/kaido-chat:latest
+          docker build -t $ECR_REGISTRY/kaido-chat-service:latest -f backend/services/chat/Dockerfile ./backend
+          docker push $ECR_REGISTRY/kaido-chat-service:latest
 
-      # 7. Agent Service Docker Image Build & Push
+      # 4. Agent Service
       - name: Build and Push Agent Image
         run: |
-          docker build -t $ECR_REGISTRY/kaido-agent:latest -f backend/services/agent/Dockerfile ./backend
-          docker push $ECR_REGISTRY/kaido-agent:latest
+          docker build -t $ECR_REGISTRY/kaido-agent-service:latest -f backend/services/agent/Dockerfile ./backend
+          docker push $ECR_REGISTRY/kaido-agent-service:latest
 
-      # 8. Billing Service Docker Image Build & Push
+      # 5. Billing Service
       - name: Build and Push Billing Image
         run: |
-          docker build -t $ECR_REGISTRY/kaido-billing:latest -f backend/services/billing/Dockerfile ./backend
-          docker push $ECR_REGISTRY/kaido-billing:latest
+          docker build -t $ECR_REGISTRY/kaido-billing-service:latest -f backend/services/billing/Dockerfile ./backend
+          docker push $ECR_REGISTRY/kaido-billing-service:latest
 
-      # 9. AWS ECS ko bolna ki naye containers deploy karo (Rolling Zero Downtime)
+      # 6. Deploy to ECS Fargate
       - name: Deploy to Amazon ECS
         run: |
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service gateway-service --force-new-deployment
