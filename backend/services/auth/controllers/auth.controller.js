@@ -7,44 +7,66 @@ import redis from "../../../shared/Redis/redis.js";
 export const login = async (req, res) => {
   try {
     const { token } = req.body;
-    const decoded = await getAuth(app).verifyIdToken(token);
-    let user = await User.findOne({ firebaseUid: decoded.uid });
+    if (!token) {
+      return res.status(400).json({ error: "Token is required" });
+    }
+
+    let decoded;
+    try {
+      decoded = await getAuth(app).verifyIdToken(token);
+    } catch (tokenErr) {
+      console.error("Token verification failed:", tokenErr);
+      return res.status(401).json({ error: "Token verification failed: " + tokenErr.message });
+    }
+
+    let user;
     let statusCode = 200;
     let message = "User logged in";
 
-    if (!user) {
-      user = await User.create({
-        firebaseUid: decoded.uid,
-        email: decoded.email,
-        name: decoded.name,
-        avatar: decoded.picture,
-      });
-      statusCode = 201;
-      message = "User created";
+    try {
+      user = await User.findOne({ firebaseUid: decoded.uid });
+      if (!user) {
+        user = await User.create({
+          firebaseUid: decoded.uid,
+          email: decoded.email,
+          name: decoded.name || decoded.email?.split("@")[0] || "User",
+          avatar: decoded.picture || "",
+        });
+        statusCode = 201;
+        message = "User created";
+      }
+    } catch (dbErr) {
+      console.error("Database error during user login:", dbErr);
+      return res.status(500).json({ error: "Database error: " + dbErr.message });
     }
 
     const sessionId = crypto.randomUUID();
-    await redis.set(
-      `user-session-${user?._id}`,
-      sessionId,
-      "EX",
-      7 * 24 * 60 * 60,
-    );
-    await redis.set(
-      `session-${sessionId}`,
-      JSON.stringify({
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        plan: user.plan,
-        credits: user.credits,
-        totalCredits: user.totalCredits,
-        planExpiresAt: user.planExpiresAt,
-      }),
-      "EX",
-      60 * 60 * 24 * 7,
-    );
+    try {
+      await redis.set(
+        `user-session-${user?._id}`,
+        sessionId,
+        "EX",
+        7 * 24 * 60 * 60,
+      );
+      await redis.set(
+        `session-${sessionId}`,
+        JSON.stringify({
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          plan: user.plan,
+          credits: user.credits,
+          totalCredits: user.totalCredits,
+          planExpiresAt: user.planExpiresAt,
+        }),
+        "EX",
+        60 * 60 * 24 * 7,
+      );
+    } catch (redisErr) {
+      console.error("Redis session error:", redisErr);
+    }
+
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("session", sessionId, {
       httpOnly: true,
@@ -56,7 +78,7 @@ export const login = async (req, res) => {
     return res.status(statusCode).json({ message, user });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(401).json({ error: "Invalid token" });
+    res.status(500).json({ error: error.message || "Login failed" });
   }
 };
 
