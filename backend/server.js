@@ -33,7 +33,13 @@ connectDB();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || true,
+    origin: (origin, callback) => {
+      if (!origin || origin.includes("vercel.app") || origin.includes("localhost") || origin === process.env.FRONTEND_URL) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
   }),
 );
