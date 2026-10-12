@@ -26,9 +26,14 @@ export const login = async (req, res) => {
     try {
       user = await User.findOne({ firebaseUid: decoded.uid });
       if (!user) {
+        const username = decoded.email
+          ? `${decoded.email.split("@")[0]}_${decoded.uid.slice(-6)}`
+          : `user_${decoded.uid.slice(-8)}`;
+
         user = await User.create({
           firebaseUid: decoded.uid,
           email: decoded.email,
+          username,
           name: decoded.name || decoded.email?.split("@")[0] || "User",
           avatar: decoded.picture || "",
         });
