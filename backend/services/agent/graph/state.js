@@ -10,4 +10,9 @@ export const agentState = Annotation.Root({
   artifacts: Annotation(),
   userId: Annotation(),
   file: Annotation(),
+  // Cyclic Self-Correction Evaluator-Optimizer state fields
+  codeErrors: Annotation(),
+  iterationCount: Annotation(),
+  isValid: Annotation(),
+  rawGeneratedCode: Annotation(),
 });

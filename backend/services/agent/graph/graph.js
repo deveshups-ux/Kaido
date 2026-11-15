@@ -1,8 +1,9 @@
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { StateGraph } from "@langchain/langgraph";
 import { agentState } from "./state.js";
 import { router } from "./router.js";
 import { chatAgent } from "../agents/chat.agent.js";
 import { codingAgent } from "../agents/coding.agent.js";
+import { codeValidator } from "../agents/codeValidator.agent.js";
 import { visionAgent } from "../agents/vision.agent.js";
 import { pdfAgent } from "../agents/pdf.agent.js";
 import { pptAgent } from "../agents/ppt.agent.js";
@@ -12,16 +13,19 @@ import { pdfRag } from "../agents/pdfRag.agent.js";
 
 const workflow = new StateGraph(agentState);
 
+// 1. Register Workflow Nodes
 workflow.addNode("router", router);
 workflow.addNode("chat", chatAgent);
 workflow.addNode("search", searchAgent);
 workflow.addNode("coding", codingAgent);
+workflow.addNode("codeValidator", codeValidator); // Evaluator-Optimizer Node
 workflow.addNode("pdf", pdfAgent);
 workflow.addNode("ppt", pptAgent);
 workflow.addNode("vision", visionAgent);
 workflow.addNode("imageAnalyzer", imageAnalyzer);
 workflow.addNode("pdfRag", pdfRag);
 
+// 2. Initial Dispatcher Edge
 workflow.addEdge("__start__", "router");
 workflow.addConditionalEdges(
   "router",
@@ -56,11 +60,32 @@ workflow.addConditionalEdges(
     vision: "vision",
     pdfRag: "pdfRag",
     imageAnalyzer: "imageAnalyzer",
-  },
+  }
 );
+
+// 3. Search -> Chat Pipeline
 workflow.addEdge("search", "chat");
 workflow.addEdge("chat", "__end__");
-workflow.addEdge("coding", "__end__");
+
+// 4. Cyclic Evaluator-Optimizer Loop for Coding Agent
+workflow.addEdge("coding", "codeValidator");
+workflow.addConditionalEdges(
+  "codeValidator",
+  (state) => {
+    // If verified valid or maximum self-correction cycles (3) reached, terminate
+    if (state.isValid || (state.iterationCount || 0) >= 3) {
+      return "__end__";
+    }
+    // Otherwise cycle back to coding generator with error feedback
+    return "coding";
+  },
+  {
+    __end__: "__end__",
+    coding: "coding",
+  }
+);
+
+// 5. Direct Leaf Nodes
 workflow.addEdge("pdf", "__end__");
 workflow.addEdge("ppt", "__end__");
 workflow.addEdge("vision", "__end__");

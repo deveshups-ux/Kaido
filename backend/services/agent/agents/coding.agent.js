@@ -3,12 +3,19 @@ import { getModel } from "../config/llmModels.js";
 import { deductCredits } from "../utils/deductCredits.js";
 
 export const codingAgent = async (state) => {
-  await checkAgentLimit(state.userId, "coding");
+  // Only check agent limit on initial invocation (not during self-correction loops)
+  if (!state.iterationCount || state.iterationCount === 0) {
+    await checkAgentLimit(state.userId, "coding");
+  }
+
   try {
     const llm = await getModel("coding");
     const intentLlm = await getModel("intent");
 
-    const intentRes = await intentLlm.invoke(`
+    // If already in a retry loop, skip re-classifying intent
+    let intent = "CODE_GENERATION";
+    if (!state.iterationCount || state.iterationCount === 0) {
+      const intentRes = await intentLlm.invoke(`
 You are an intent classifier for a coding assistant.
 
 Classify the user's request into EXACTLY ONE of these categories:
@@ -29,9 +36,17 @@ Rules:
 User Request:
 ${state.prompt}
 `);
+      intent = intentRes.content.trim().toUpperCase();
+    }
 
-    const intent = intentRes.content.trim().toUpperCase();
-    if (intent == "CODE_GENERATION") {
+    if (intent === "CODE_GENERATION") {
+      const feedbackDirective = state.codeErrors
+        ? `\n\n[CRITICAL EVALUATOR FEEDBACK — ATTEMPT #${(state.iterationCount || 0) + 1}]
+The previous generation failed validation with the following issues:
+- ${state.codeErrors}
+You MUST fix all of these issues while generating the complete project. Ensure all brackets are balanced, files are complete, and the JSON is 100% syntactically valid.`
+        : "";
+
       const prompt = `
 You are Kaido, an expert AI coding agent that builds complete, working web projects.
 
@@ -50,7 +65,6 @@ STACK RULES:
   https://picsum.photos/800/600?random=2
   Never use broken/fake/placeholder image paths like "image.jpg" or Unsplash source URLs.
 
-  
 CODE QUALITY RULES:
 - Code must be complete and runnable as-is — no placeholders like "// add logic here".
 - No broken links, missing imports, or undefined variables.
@@ -75,6 +89,7 @@ OUTPUT RULES:
 - No explanation text before or after the JSON.
 - Escape all special characters properly so the JSON is parseable.
 - Never mention your classification or reasoning process.
+${feedbackDirective}
 
 User Request:
 ${state.prompt}
@@ -86,30 +101,40 @@ ${state.prompt}
         const cleaned = res.content.trim().replace(/^```json\n?|\n?```$/g, "");
         data = JSON.parse(cleaned);
       } catch (e) {
-        console.error("Failed to parse coding agent JSON:", e, res.content);
+        console.warn("[codingAgent] Failed to parse generated JSON:", e.message);
         return {
           ...state,
-          aiResponse:
-            "Sorry, something went wrong while generating the project. Please try again.",
+          rawGeneratedCode: res.content,
+          codeErrors: `Failed to parse generated JSON: ${e.message}`,
           artifacts: [],
         };
       }
-      await deductCredits(state.userId, "coding");
+
+      // Deduct credits only on first successful compilation
+      if (!state.iterationCount || state.iterationCount === 0) {
+        try {
+          await deductCredits(state.userId, "coding");
+        } catch (credErr) {
+          console.warn("Credit deduction warning:", credErr.message);
+        }
+      }
 
       return {
         ...state,
-        aiResponse: "Code Generated Succesfully",
+        rawGeneratedCode: null,
+        aiResponse: "Code Generated Successfully",
         artifacts: [
           {
             id: Date.now(),
             type: "Project",
             files: data.files || [],
-            title:
-              data.title || state.prompt?.slice(0, 60) || "Generated Project",
+            title: data.title || state.prompt?.slice(0, 60) || "Generated Project",
           },
         ],
       };
     }
+
+    // Non-generation requests (code review, explanation, debugging, etc.)
     const res = await llm.invoke(`
 You are Kaido, an expert coding assistant.
 
@@ -133,17 +158,24 @@ User Request:
 ${state.prompt}
 `);
 
-    const data = res.content;
-    await deductCredits(state.userId, "coding");
+    if (!state.iterationCount || state.iterationCount === 0) {
+      try {
+        await deductCredits(state.userId, "coding");
+      } catch (credErr) {
+        console.warn("Credit deduction warning:", credErr.message);
+      }
+    }
+
     return {
       ...state,
-      aiResponse: data,
+      aiResponse: res.content,
       artifacts: [],
     };
   } catch (error) {
+    console.error("[codingAgent Error]:", error);
     return {
       ...state,
-      aiResponse: "Failed to generate response.",
+      aiResponse: "Failed to generate code response.",
     };
   }
 };
